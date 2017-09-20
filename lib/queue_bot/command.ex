@@ -3,8 +3,6 @@ defmodule QueueBot.Command do
   import Plug.Conn
   require Poison
 
-  @whitney_url "https://media.licdn.com/mpr/mpr/shrinknp_400_400/p/3/000/01a/289/35526fc.jpg"
-
   def init(options) do
     options
   end
@@ -110,7 +108,7 @@ defmodule QueueBot.Command do
 
     %{
       "text": "Current Queue",
-      "attachments": [%{"image_url" => @whitney_url}] ++ attachments
+      "attachments": attachments
     }
   end
 
