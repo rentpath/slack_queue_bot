@@ -53,8 +53,8 @@ defmodule QueueBot.Command do
              ]
            }
 
-           case index do
-             0 ->
+           cond do
+             index == 0 && length(result) > 1 ->
                possible_actions = [%{
                  "name": "down",
                  "text": "Move Down",
@@ -62,7 +62,7 @@ defmodule QueueBot.Command do
                  "value": id
                }]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
-             ^last_result_index ->
+             index == last_result_index && length(result) > 1 ->
                possible_actions = [%{
                  "name": "up",
                  "text": "Move Up",
@@ -70,7 +70,7 @@ defmodule QueueBot.Command do
                  "value": id
                }]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
-             _ ->
+             length(result) > 1 ->
                possible_actions = [%{
                  "name": "up",
                  "text": "Move Up",
@@ -84,6 +84,8 @@ defmodule QueueBot.Command do
                  "value": id
                }]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
+             true ->
+               buttons
            end
          end)
   
