@@ -55,34 +55,13 @@ defmodule QueueBot.Command do
 
            cond do
              index == 0 && length(result) > 1 ->
-               possible_actions = [%{
-                 "name": "down",
-                 "text": "Move Down",
-                 "type": "button",
-                 "value": id
-               }]
+               possible_actions = [down_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              index == last_result_index && length(result) > 1 ->
-               possible_actions = [%{
-                 "name": "up",
-                 "text": "Move Up",
-                 "type": "button",
-                 "value": id
-               }]
+               possible_actions = [up_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              length(result) > 1 ->
-               possible_actions = [%{
-                 "name": "up",
-                 "text": "Move Up",
-                 "type": "button",
-                 "value": id
-               },
-               %{
-                 "name": "down",
-                 "text": "Move Down",
-                 "type": "button",
-                 "value": id
-               }]
+               possible_actions = [up_button(id), down_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              true ->
                buttons
@@ -114,6 +93,7 @@ defmodule QueueBot.Command do
     }
   end
 
+  # button clicks
   defp parse_command(%{"payload" => payload}) do
     parsed_payload = payload |> Poison.decode!
     channel_id = parsed_payload["channel"]["id"]
@@ -125,12 +105,32 @@ defmodule QueueBot.Command do
 
     {channel_id, {action_atom, id}}
   end
+  # typed /queue (or whatever app name is) calls
   defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id}) do
     cond do
-      text =~ ~r/^\s*help\s*$/ -> {channel_id, {:help}}
       text =~ ~r/^\s*edit\s*$/ -> {channel_id, {:edit}}
       text =~ ~r/^\s*display\s*$/ -> {channel_id, {:display}}
+      text =~ ~r/^\s*help\s*$/ -> {channel_id, {:help}}
+      text =~ ~r/^\s*$/ -> {channel_id, {:help}}
       true -> {channel_id, {:push, id, text}}
     end
+  end
+
+  defp down_button(id) do
+    %{
+      "name": "down",
+      "text": "Move Down",
+      "type": "button",
+      "value": id
+    }
+  end
+
+  defp up_button(id) do
+    %{
+      "name": "up",
+      "text": "Move up",
+      "type": "button",
+      "value": id
+    }
   end
 end
