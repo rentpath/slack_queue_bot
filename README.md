@@ -9,7 +9,7 @@ crashes, etc, you lose all queues.  That may change in a future version.
 ## Installation
 
 * `mix deps.get`
-* `mix phoenix.server`
+* `mix run --no-halt`
 
 And then, inside slack configuration, "create a new app" for your organization.  You'll need to
 fill in these two sections.  "your root endpoint" refers to the host and port on which you
