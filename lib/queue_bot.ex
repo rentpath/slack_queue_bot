@@ -4,12 +4,14 @@ defmodule QueueBot do
   require Logger
 
   @moduledoc """
-  Documentation for QueueBot.
+  A chatbot queue for slack.
   """
+
+  @port Application.get_env(:queue_bot, :server)[:port]
 
   def start(_type, _args) do
     children = [
-      Plug.Adapters.Cowboy.child_spec(:http, QueueBot.Router, [], port: 4000),
+      Plug.Adapters.Cowboy.child_spec(:http, QueueBot.Router, [], port: @port),
       worker(QueueBot.Manager, [:manager])
     ]
 
