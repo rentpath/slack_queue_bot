@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# guarantee hex and rebar exist on jenkins slaves
+mix local.hex --force
+mix local.rebar --force
+
+MIX_ENV=prod mix do deps.get, compile
+
+# refresh release config
+rm -f config/queue_bot.conf
+MIX_ENV=prod mix conform.configure
+
+MIX_ENV=prod mix release
