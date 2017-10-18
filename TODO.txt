@@ -9,3 +9,4 @@
 * change name of help to /qubot
 * imrpove readme to include installing service
 * make name of bot configurable
+* change help to be callout name, PR url, etc
