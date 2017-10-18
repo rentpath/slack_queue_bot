@@ -1,0 +1,7 @@
+* refactor out view stuff
+* make good branch point for bot next week
+* add some tests
+* update README
+* empty things shouldn't trigger nothing but help
+* move to top
+* for notification, use either who created item and/or @callout if present
