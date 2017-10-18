@@ -1,7 +1,11 @@
 * refactor out view stuff
 * make good branch point for bot next week
-* add some tests
+* add some tests (check for public vs private response, use test channels)
 * update README
 * empty things shouldn't trigger nothing but help
 * move to top
 * for notification, use either who created item and/or @callout if present
+* public broadcast (of top item)?
+* change name of help to /qubot
+* imrpove readme to include installing service
+* make name of bot configurable
