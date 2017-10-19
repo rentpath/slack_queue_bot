@@ -31,3 +31,6 @@ use Mix.Config
 
 config :queue_bot, :server,
   port: 4000
+
+config :queue_bot, :slack,
+  name: "qubot"

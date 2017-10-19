@@ -22,15 +22,15 @@ defmodule QueueBot.Command do
     |> send_resp(200, Poison.encode!(response))
   end
 
-  defp response(result, _) when length(result) == 0 do
+  defp response(%{queue: []}, _) do
     %{
       "text": "Queue is empty",
     }
   end
-  defp response(result, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down] do
-    last_result_index = length(result) - 1
+  defp response(%{queue: queue, new_first?: new_first?}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down] do
+    last_index = length(queue) - 1
     attachments =
-      result
+      queue
       |> Enum.with_index()
       |> Enum.map(fn {%{id: id, item: item}, index} ->
            buttons = %{
@@ -54,13 +54,13 @@ defmodule QueueBot.Command do
            }
 
            cond do
-             index == 0 && length(result) > 1 ->
+             index == 0 && length(queue) > 1 ->
                possible_actions = [down_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
-             index == last_result_index && length(result) > 1 ->
+             index == last_index && length(queue) > 1 ->
                possible_actions = [up_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
-             length(result) > 1 ->
+             length(queue) > 1 ->
                possible_actions = [up_button(id), down_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              true ->
@@ -81,11 +81,11 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
-  defp response(result, {_, type}) when elem(type, 0) in [:display, :push] do
+  defp response(%{queue: queue, new_first?: new_first?}, {_, type}) when elem(type, 0) in [:display, :push] do
     attachments =
-      result
+      queue
       |> Enum.with_index()
-      |> Enum.map(fn {result, index} -> %{"text" => "#{index + 1}. #{result}"} end)
+      |> Enum.map(fn {queue, index} -> %{"text" => "#{index + 1}. #{queue}"} end)
 
     %{
       "text": "Current Queue",

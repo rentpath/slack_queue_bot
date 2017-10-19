@@ -12,7 +12,7 @@ defmodule QueueBot do
   def start(_type, _args) do
     children = [
       Plug.Adapters.Cowboy.child_spec(:http, QueueBot.Router, [], port: @port),
-      worker(QueueBot.Manager, [:manager])
+      worker(QueueBot.Manager, [])
     ]
 
     Logger.info "Started application"
