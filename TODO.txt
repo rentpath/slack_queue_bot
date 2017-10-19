@@ -14,3 +14,4 @@
 * edit should allow you to edit the text
 * auto build of bot a la rentpath-node
 * add mysql / persistance / ETS
+* add broadcast to send to whole channel
