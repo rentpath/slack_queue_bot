@@ -10,3 +10,7 @@
 * imrpove readme to include installing service
 * make name of bot configurable
 * change help to be callout name, PR url, etc
+* up should let you edit last message
+* edit should allow you to edit the text
+* auto build of bot a la rentpath-node
+* add mysql / persistance / ETS
