@@ -1,12 +1,7 @@
 * refactor out view stuff
-* make good branch point for bot next week
-* add some tests (check for public vs private response, use test channels)
 * update README
 * empty things shouldn't trigger nothing but help
-* move to top
 * for notification, use either who created item and/or @callout if present
-* public broadcast (of top item)?
-* change name of help to /qubot
 * imrpove readme to include installing service
 * make name of bot configurable
 * change help to be callout name, PR url, etc
@@ -14,4 +9,11 @@
 * edit should allow you to edit the text
 * auto build of bot a la rentpath-node
 * add mysql / persistance / ETS
-* add broadcast to send to whole channel
+* add shared secret to
+  - Validating the command on page https://api.slack.com/slash-commands
+* make sure to do all of the stuff on https://api.slack.com/docs/message-formatting
+  - especially HTML entity escapes
+* honor the application token
+* move to top
+* queue "pop"
+* customize timeout for new top item in config

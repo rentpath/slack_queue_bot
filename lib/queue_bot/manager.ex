@@ -27,14 +27,15 @@ defmodule QueueBot.Manager do
 
   defp do_handle_call({_, {:help}}, _from, state) do
     items = [
-      "/#{@name} help : displays this message",
-      "/#{@name} display : displays the current @name",
-      "/#{@name} edit : remove items from or move items within the @name"
+      "/#{@name} help : displays this message (privately)",
+      "/#{@name} display : displays the current queue (privately)",
+      "/#{@name} broadcast: displays the current queue, but broadcasts to channel",
+      "/#{@name} edit : remove items from or move items within the @name",
     ]
 
     {:reply, items, state}
   end
-  defp do_handle_call({channel, {:display}}, _from, state) do
+  defp do_handle_call({channel, command}, _from, state) when command in [{:display}, {:broadcast}] do
     items =
       state[channel][:queue]
       |> get_item_texts()
@@ -90,7 +91,7 @@ defmodule QueueBot.Manager do
   defp do_handle_call({channel, {:delayed_message, url, body}}, from, state) do
     case state[channel][:delayed_job_ref] do
       nil ->
-        sender_ref = Process.send_after(self(), {:delayed_response, channel, url, body}, 10 * 1000)
+        sender_ref = Process.send_after(self(), {:delayed_response, channel, url, body}, 30 * 1000)
         {:reply, :ok, put_in(state, [channel, :delayed_job_ref], sender_ref)}
       sender_ref ->
         Process.cancel_timer(sender_ref)

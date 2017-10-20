@@ -67,6 +67,23 @@ defmodule QueueBot.ManagerTest do
     end
   end
 
+  describe "#broadcast" do
+    test "returns the current queue", %{channel: channel} do
+      items = ["lemons", "limes", "limons"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:broadcast}})
+      assert length(queue) == length(items) 
+      assert Enum.all?(Enum.zip(items, queue), fn {item, queue_item} -> item == queue_item end)
+    end
+
+    test "returns new_first? false", %{channel: channel} do
+      items = ["coke", "pepsi", "shasta"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{new_first?: new_first?} = QueueBot.Manager.call({channel, {:broadcast}})
+      assert new_first? == false
+    end
+  end
+
   describe "#edit" do
     test "returns the current queue, each with an id and item", %{channel: channel} do
       items = ["medicine", "broth"]

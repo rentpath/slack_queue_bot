@@ -11,7 +11,7 @@ defmodule QueueBot.Command do
     {:ok, body, _} = Plug.Conn.read_body(conn)
     params = Plug.Conn.Query.decode(body)
 
-    {response_url, {channel, command} = parsed_command} = parse_command(params)
+    {response_url, {channel, _} = parsed_command} = parse_command(params)
 
     manager_result = Manager.call(parsed_command)
     response =  response(manager_result, parsed_command)
@@ -99,16 +99,22 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
-  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:display, :push] do
+  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:display, :push, :broadcast] do
     attachments =
       queue
       |> Enum.with_index()
       |> Enum.map(fn {queue, index} -> %{"text" => "#{index + 1}. #{queue}"} end)
 
-    %{
-      "text": "Current Queue",
-      "attachments": attachments
-    }
+    base_message =
+      %{
+        "text": "Current Queue",
+        "attachments": attachments
+      }
+
+    case elem(type, 0) do
+      :broadcast -> Map.put(base_message, :"response_type", "in_channel")
+      _ -> base_message
+    end
   end
 
   # button clicks
@@ -129,6 +135,7 @@ defmodule QueueBot.Command do
     cond do
       text =~ ~r/^\s*edit\s*$/ -> {response_url, {channel_id, {:edit}}}
       text =~ ~r/^\s*display\s*$/ -> {response_url, {channel_id, {:display}}}
+      text =~ ~r/^\s*broadcast\s*$/ -> {response_url, {channel_id, {:broadcast}}}
       text =~ ~r/^\s*help\s*$/ -> {response_url, {channel_id, {:help}}}
       text =~ ~r/^\s*$/ -> {response_url, {channel_id, {:help}}}
       true -> {response_url, {channel_id, {:push, id, text}}}
