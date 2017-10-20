@@ -24,15 +24,18 @@ defmodule QueueBot.Command do
 
   defp additional_actions(channel, %{queue: queue, new_first?: true}, url) do
     attachments =
-      Enum.map(Enum.zip(Enum.take(queue, 2), ["good", "warning"]),
-        fn {%{item: item}, color} -> %{"text": item, "color": color}
-           {item, color} -> %{"text": item, "color": color}
-           _ -> IO.puts "didn't match on anything"
-        end)
+      case queue do
+        [] -> [%{"text": "Queue is now empty"}]
+        queue ->
+          Enum.map(Enum.zip(Enum.take(queue, 2), ["good", "warning"]),
+            fn {%{item: item}, color} -> %{"text": item, "color": color}
+               {item, color} -> %{"text": item, "color": color}
+            end)
+      end
 
     body = %{
       "response_type": "in_channel",
-      "text": "*bold* Next in queue:",
+      "text": "*Next in queue:*",
       "attachments": attachments
     }
 
@@ -42,7 +45,7 @@ defmodule QueueBot.Command do
 
   defp response(%{queue: []}, _) do
     %{
-      "text": "Queue is empty",
+      "text": "*Queue is empty*",
     }
   end
   defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down, :move_to_top] do
