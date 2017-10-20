@@ -31,6 +31,15 @@ defmodule QueueBot.ManagerTest do
       assert new_first? == true
     end
 
+    test "with one item in the queue returns new_first? true", %{channel: channel} do
+      %{queue: queue} = QueueBot.Manager.call({channel, {:display}})
+      assert length(queue) == 0
+      %{new_first?: new_first?} = add_item(channel, "write a song")
+      assert new_first? == true
+      %{new_first?: new_first?} = add_item(channel, "write another song")
+      assert new_first? == true
+    end
+
     test "with items in the queue returns new_first? false", %{channel: channel} do
       %{queue: queue} = QueueBot.Manager.call({channel, {:display}})
       assert length(queue) == 0
@@ -87,7 +96,7 @@ defmodule QueueBot.ManagerTest do
       assert length(queue) == length(items) - 1
     end
 
-    test "with two items, removing the first, returns new_first? true", %{channel: channel} do
+    test "with multiple items, removing the first, returns new_first? true", %{channel: channel} do
       items = ["so", "do", "la", "fa"]
       Enum.each(items, &(add_item(channel, &1)))
       %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
@@ -97,7 +106,17 @@ defmodule QueueBot.ManagerTest do
       assert new_first? == true
     end
 
-    test "with many items, removing any but the first, returns new_first? false", %{channel: channel} do
+    test "with multiple items, removing the second, returns new_first? true", %{channel: channel} do
+      items = ["la", "mi", "fa", "do"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      assert length(queue) == length(items)
+      %{id: id} = Enum.at(queue, 1)
+      %{new_first?: new_first?} = QueueBot.Manager.call({channel, {:remove, id}})
+      assert new_first? == true
+    end
+
+    test "with many items, removing any but the first two, returns new_first? false", %{channel: channel} do
       items = ["do", "re", "do"]
       Enum.each(items, &(add_item(channel, &1)))
       %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
@@ -145,11 +164,22 @@ defmodule QueueBot.ManagerTest do
       assert new_first? == true
     end
 
-    test "on the third, returns new_first? false", %{channel: channel} do
+    test "on the third, returns new_first? true", %{channel: channel} do
       items = ["do", "re", "do"]
       Enum.each(items, &(add_item(channel, &1)))
       %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
       %{id: id} = Enum.at(queue, 2)
+      %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:up, id}})
+      assert queue != new_queue
+      assert equal_contents(queue, new_queue)
+      assert new_first? == true
+    end
+
+    test "on the fourth, returns new_first? false", %{channel: channel} do
+      items = ["mi", "do", "re", "fa"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      %{id: id} = Enum.at(queue, 3)
       %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:up, id}})
       assert queue != new_queue
       assert equal_contents(queue, new_queue)
@@ -174,7 +204,7 @@ defmodule QueueBot.ManagerTest do
     end
 
     test "on the last item returns the same queue and new_first? false", %{channel: channel} do
-      items = ["simple", "simon"]
+      items = ["m", "o"]
       Enum.each(items, &(add_item(channel, &1)))
       %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
       %{id: id} = List.last(queue)
@@ -183,11 +213,33 @@ defmodule QueueBot.ManagerTest do
       assert new_first? == false
     end
 
-    test "on the second, returns new_first? false", %{channel: channel} do
-      items = ["so", "do", "la", "fa"]
+    test "on the first, returns new_first? true", %{channel: channel} do
+      items = ["x", "y", "a", "b"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      [%{id: id} | _] = queue
+      %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:down, id}})
+      assert queue != new_queue
+      assert equal_contents(queue, new_queue)
+      assert new_first? == true
+    end
+
+    test "on the second, returns new_first? true", %{channel: channel} do
+      items = ["o", "p", "q", "r"]
       Enum.each(items, &(add_item(channel, &1)))
       %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
       %{id: id} = Enum.at(queue, 1)
+      %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:down, id}})
+      assert queue != new_queue
+      assert equal_contents(queue, new_queue)
+      assert new_first? == true
+    end
+
+    test "on the third, returns new_first? false", %{channel: channel} do
+      items = ["so", "do", "la", "fa"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      %{id: id} = Enum.at(queue, 2)
       %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:down, id}})
       assert queue != new_queue
       assert equal_contents(queue, new_queue)

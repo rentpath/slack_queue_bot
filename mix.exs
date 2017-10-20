@@ -21,6 +21,7 @@ defmodule QueueBot.Mixfile do
     [{:conform, "~> 2.5.2", runtime: false},
      {:cowboy, "~> 1.1.2"},
      {:distillery, "~> 1.5.2", runtime: false},
+     {:httpoison, "~> 0.13"},
      {:plug, "~> 1.4.0"},
      {:poison, "~> 2.0"}
       # {:dep_from_hexpm, "~> 0.3.0"},

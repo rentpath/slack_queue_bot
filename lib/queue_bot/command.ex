@@ -11,23 +11,41 @@ defmodule QueueBot.Command do
     {:ok, body, _} = Plug.Conn.read_body(conn)
     params = Plug.Conn.Query.decode(body)
 
-    parsed_command = parse_command(params)
+    {response_url, {channel, command} = parsed_command} = parse_command(params)
 
-    response =
-      Manager.call(parsed_command)
-      |> response(parsed_command)
+    manager_result = Manager.call(parsed_command)
+    response =  response(manager_result, parsed_command)
+    additional_actions(channel, manager_result, response_url)
 
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(response))
   end
 
+  defp additional_actions(channel, %{queue: queue, new_first?: true}, url) do
+    attachments =
+      Enum.map(Enum.zip(Enum.take(queue, 2), ["good", "warning"]),
+        fn {%{item: item}, color} -> %{"text": item, "color": color}
+           {item, color} -> %{"text": item, "color": color}
+           _ -> IO.puts "didn't match on anything"
+        end)
+
+    body = %{
+      "response_type": "in_channel",
+      "text": "*bold* Next in queue:",
+      "attachments": attachments
+    }
+
+    Manager.call({channel, {:delayed_message, url, Poison.encode!(body)}})
+  end
+  defp additional_actions(_, _, _), do: nil
+
   defp response(%{queue: []}, _) do
     %{
       "text": "Queue is empty",
     }
   end
-  defp response(%{queue: queue, new_first?: new_first?}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down] do
+  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down] do
     last_index = length(queue) - 1
     attachments =
       queue
@@ -67,7 +85,7 @@ defmodule QueueBot.Command do
                buttons
            end
          end)
-  
+
     %{
       "text": "Edit the queue",
       "attachments": attachments
@@ -81,7 +99,7 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
-  defp response(%{queue: queue, new_first?: new_first?}, {_, type}) when elem(type, 0) in [:display, :push] do
+  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:display, :push] do
     attachments =
       queue
       |> Enum.with_index()
@@ -101,18 +119,19 @@ defmodule QueueBot.Command do
       parsed_payload["actions"]
       |> List.first
 
+    response_url = parsed_payload["response_url"]
     action_atom = action |> String.to_atom
 
-    {channel_id, {action_atom, id}}
+    {response_url, {channel_id, {action_atom, id}}}
   end
   # typed /queue (or whatever app name is) calls
-  defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id}) do
+  defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id, "response_url" => response_url}) do
     cond do
-      text =~ ~r/^\s*edit\s*$/ -> {channel_id, {:edit}}
-      text =~ ~r/^\s*display\s*$/ -> {channel_id, {:display}}
-      text =~ ~r/^\s*help\s*$/ -> {channel_id, {:help}}
-      text =~ ~r/^\s*$/ -> {channel_id, {:help}}
-      true -> {channel_id, {:push, id, text}}
+      text =~ ~r/^\s*edit\s*$/ -> {response_url, {channel_id, {:edit}}}
+      text =~ ~r/^\s*display\s*$/ -> {response_url, {channel_id, {:display}}}
+      text =~ ~r/^\s*help\s*$/ -> {response_url, {channel_id, {:help}}}
+      text =~ ~r/^\s*$/ -> {response_url, {channel_id, {:help}}}
+      true -> {response_url, {channel_id, {:push, id, text}}}
     end
   end
 
