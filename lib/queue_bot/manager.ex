@@ -28,10 +28,10 @@ defmodule QueueBot.Manager do
 
   defp do_handle_call({_, {:help}}, _from, state) do
     items = [
-      "/#{@name} help : displays this message (privately)",
+      "/#{@name} help: displays this message (privately)",
       "/#{@name} broadcast: displays the current queue to the entire channel",
-      "/#{@name} display : displays the current queue privately",
-      "/#{@name} edit : remove items from or move items within the queue",
+      "/#{@name} display: displays the current queue privately",
+      "/#{@name} edit: remove items from or move items within the queue",
       "/#{@name} pop: removes an item from the top of the queue",
       "/#{@name} <anything else>: adds item to the bottom of the queue"
     ]
