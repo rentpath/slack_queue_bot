@@ -16,3 +16,4 @@ SOON:
 * add mysql / persistance / ETS
 * honor the application token
 * add nginx https
+* if items go from 1 to 0, the broadcast still happens
