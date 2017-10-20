@@ -14,5 +14,3 @@
 * make sure to do all of the stuff on https://api.slack.com/docs/message-formatting
   - especially HTML entity escapes
 * honor the application token
-* move to top
-* customize timeout for new top item in config

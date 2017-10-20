@@ -2,6 +2,7 @@ defmodule QueueBot.Manager do
   use GenServer
 
   @name Application.get_env(:queue_bot, :slack)[:name] 
+  @new_top_items_timout Application.get_env(:queue_bot, :slack)[:new_top_items_timeout]
 
   def start_link() do
     GenServer.start_link(__MODULE__, nil, [name: :manager])
@@ -110,7 +111,7 @@ defmodule QueueBot.Manager do
   defp do_handle_call({channel, {:delayed_message, url, body}}, from, state) do
     case state[channel][:delayed_job_ref] do
       nil ->
-        sender_ref = Process.send_after(self(), {:delayed_response, channel, url, body}, 30 * 1000)
+        sender_ref = Process.send_after(self(), {:delayed_response, channel, url, body}, @new_top_items_timout * 1000)
         {:reply, :ok, put_in(state, [channel, :delayed_job_ref], sender_ref)}
       sender_ref ->
         Process.cancel_timer(sender_ref)

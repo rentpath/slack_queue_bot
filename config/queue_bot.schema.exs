@@ -59,6 +59,22 @@ See the moduledoc for `Conform.Schema.Validator` for more details and examples.
       doc: "Provide documentation for queue_bot.server.port here.",
       hidden: false,
       to: "queue_bot.server.port"
+    ],
+    "queue_bot.slack.name": [
+      commented: false,
+      datatype: :binary,
+      default: "qubot",
+      doc: "Provide documentation for queue_bot.slack.name here.",
+      hidden: false,
+      to: "queue_bot.slack.name"
+    ],
+    "queue_bot.slack.new_top_items_timeout": [
+      commented: false,
+      datatype: :integer,
+      default: 30,
+      doc: "Provide documentation for queue_bot.slack.new_top_items_timeout here.",
+      hidden: false,
+      to: "queue_bot.slack.new_top_items_timeout"
     ]
   ],
   transforms: [],

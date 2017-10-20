@@ -33,4 +33,5 @@ config :queue_bot, :server,
   port: 4000
 
 config :queue_bot, :slack,
-  name: "qubot"
+  name: "qubot",
+  new_top_items_timeout: 30
