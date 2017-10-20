@@ -45,7 +45,7 @@ defmodule QueueBot.Command do
       "text": "Queue is empty",
     }
   end
-  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down] do
+  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down, :move_to_top] do
     last_index = length(queue) - 1
     attachments =
       queue
@@ -76,10 +76,10 @@ defmodule QueueBot.Command do
                possible_actions = [down_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              index == last_index && length(queue) > 1 ->
-               possible_actions = [up_button(id)]
+               possible_actions = [move_to_top_button(id), up_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              length(queue) > 1 ->
-               possible_actions = [up_button(id), down_button(id)]
+               possible_actions = [move_to_top_button(id), up_button(id), down_button(id)]
                Map.put(buttons, :actions, buttons.actions ++ possible_actions)
              true ->
                buttons
@@ -156,6 +156,15 @@ defmodule QueueBot.Command do
     %{
       "name": "up",
       "text": "Move up",
+      "type": "button",
+      "value": id
+    }
+  end
+
+  defp move_to_top_button(id) do
+    %{
+      "name": "move_to_top",
+      "text": "Move to top",
       "type": "button",
       "value": id
     }

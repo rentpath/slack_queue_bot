@@ -97,6 +97,16 @@ defmodule QueueBot.Manager do
       end
     {:reply, %{queue: new_queue, new_first?: new_first?}, put_in(state, [channel, :queue], new_queue)}
   end
+  defp do_handle_call({channel, {:move_to_top, id}}, _from, state) do
+    queue = state[channel][:queue]
+    {new_queue, new_first?} =
+      case Enum.find_index(queue, &(&1.id == id)) do
+        nil -> {queue, false}
+        0 -> {queue, false}
+        index -> {move_to_top(queue, index), true}
+      end
+    {:reply, %{queue: new_queue, new_first?: new_first?}, put_in(state, [channel, :queue], new_queue)}
+  end
   defp do_handle_call({channel, {:delayed_message, url, body}}, from, state) do
     case state[channel][:delayed_job_ref] do
       nil ->
@@ -127,5 +137,11 @@ defmodule QueueBot.Manager do
     item = Enum.at(queue, index)
     list = List.delete_at(queue, index)
     List.insert_at(list, index + 1, item)
+  end
+
+  defp move_to_top(queue, index) do
+    item = Enum.at(queue, index)
+    list = List.delete_at(queue, index)
+    List.insert_at(list, 0, item)
   end
 end

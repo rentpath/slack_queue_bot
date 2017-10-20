@@ -231,6 +231,45 @@ defmodule QueueBot.ManagerTest do
     end
   end
 
+  describe "#move_to_top" do
+    test "moves an item to the top of the queue", %{channel: channel} do
+      items = ["simmy", "swanny", "samsonite"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      assert length(queue) == length(items)
+      [%{id: first_id}, %{id: middle_id}, %{id: last_id}] = queue
+      assert first_id != last_id
+      QueueBot.Manager.call({channel, {:move_to_top, last_id}})
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      assert length(queue) == length(items)
+      [%{id: new_first_id}, %{id: new_middle_id}, %{id: new_last_id}] = queue
+      assert new_first_id == last_id
+      assert new_middle_id == first_id
+      assert new_last_id == middle_id
+    end
+
+    test "on the first item returns the same queue and new_first? false", %{channel: channel} do
+      items = ["simple", "simon", "pieman"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      [%{id: id} | _] = queue
+      %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:move_to_top, id}})
+      assert queue == new_queue
+      assert new_first? == false
+    end
+
+    test "on any other, returns new_first? true", %{channel: channel} do
+      items = ["p", "q", "m", "n"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:edit}})
+      %{id: id} = Enum.at(queue, 2)
+      %{queue: new_queue, new_first?: new_first?} = QueueBot.Manager.call({channel, {:move_to_top, id}})
+      assert queue != new_queue
+      assert equal_contents(queue, new_queue)
+      assert new_first? == true
+    end
+  end
+
   describe "#down" do
     test "moves an item down in the queue", %{channel: channel} do
       items = ["sam", "sausage"]
