@@ -1,16 +1,18 @@
+MAYBE LATER:
 * refactor out view stuff
-* update README
 * empty things shouldn't trigger nothing but help
 * for notification, use either who created item and/or @callout if present
-* imrpove readme to include installing service
-* make name of bot configurable
-* change help to be callout name, PR url, etc
 * up should let you edit last message
 * edit should allow you to edit the text
 * auto build of bot a la rentpath-node
-* add mysql / persistance / ETS
-* add shared secret to
-  - Validating the command on page https://api.slack.com/slash-commands
 * make sure to do all of the stuff on https://api.slack.com/docs/message-formatting
   - especially HTML entity escapes
+
+SOON:
+* add shared secret to
+  - Validating the command on page https://api.slack.com/slash-commands
+* update README
+* imrpove readme to include installing service
+* add mysql / persistance / ETS
 * honor the application token
+* add nginx https
