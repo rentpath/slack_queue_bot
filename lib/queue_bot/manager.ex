@@ -28,9 +28,11 @@ defmodule QueueBot.Manager do
   defp do_handle_call({_, {:help}}, _from, state) do
     items = [
       "/#{@name} help : displays this message (privately)",
-      "/#{@name} display : displays the current queue (privately)",
-      "/#{@name} broadcast: displays the current queue, but broadcasts to channel",
-      "/#{@name} edit : remove items from or move items within the @name",
+      "/#{@name} broadcast: displays the current queue to the entire channel",
+      "/#{@name} display : displays the current queue privately",
+      "/#{@name} edit : remove items from or move items within the queue",
+      "/#{@name} pop: removes an item from the top of the queue",
+      "/#{@name} <anything else>: adds item to the bottom of the queue"
     ]
 
     {:reply, items, state}
@@ -50,6 +52,13 @@ defmodule QueueBot.Manager do
     new_queue = queue ++ [%{id: id, item: item}]
     items = get_item_texts(new_queue)
     new_first? = length(queue) in [0,1]
+    {:reply, %{queue: items, new_first?: new_first?}, put_in(state, [channel, :queue], new_queue)}
+  end
+  defp do_handle_call({channel, {:pop}}, _from, state) do
+    queue = state[channel][:queue]
+    new_queue = Enum.drop(queue, 1)
+    items = get_item_texts(new_queue)
+    new_first? = length(queue) > 0
     {:reply, %{queue: items, new_first?: new_first?}, put_in(state, [channel, :queue], new_queue)}
   end
   defp do_handle_call({channel, {:remove, id}}, _from, state) do

@@ -15,5 +15,4 @@
   - especially HTML entity escapes
 * honor the application token
 * move to top
-* queue "pop"
 * customize timeout for new top item in config

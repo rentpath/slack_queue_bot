@@ -99,7 +99,7 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
-  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:display, :push, :broadcast] do
+  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:display, :push, :broadcast, :pop] do
     attachments =
       queue
       |> Enum.with_index()
@@ -133,10 +133,11 @@ defmodule QueueBot.Command do
   # typed /queue (or whatever app name is) calls
   defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id, "response_url" => response_url}) do
     cond do
-      text =~ ~r/^\s*edit\s*$/ -> {response_url, {channel_id, {:edit}}}
-      text =~ ~r/^\s*display\s*$/ -> {response_url, {channel_id, {:display}}}
-      text =~ ~r/^\s*broadcast\s*$/ -> {response_url, {channel_id, {:broadcast}}}
       text =~ ~r/^\s*help\s*$/ -> {response_url, {channel_id, {:help}}}
+      text =~ ~r/^\s*broadcast\s*$/ -> {response_url, {channel_id, {:broadcast}}}
+      text =~ ~r/^\s*display\s*$/ -> {response_url, {channel_id, {:display}}}
+      text =~ ~r/^\s*edit\s*$/ -> {response_url, {channel_id, {:edit}}}
+      text =~ ~r/^\s*pop\s*$/ -> {response_url, {channel_id, {:pop}}}
       text =~ ~r/^\s*$/ -> {response_url, {channel_id, {:help}}}
       true -> {response_url, {channel_id, {:push, id, text}}}
     end

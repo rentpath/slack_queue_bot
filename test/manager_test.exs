@@ -13,6 +13,33 @@ defmodule QueueBot.ManagerTest do
     end
   end
 
+  describe "#pop" do
+    test "removes an item", %{channel: channel} do
+      items = ["so", "ti", "fa"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:display}})
+      assert length(queue) == 3
+      %{queue: queue} = QueueBot.Manager.call({channel, {:pop}})
+      assert length(queue) == 2
+    end
+
+    test "with no items in the queue returns new_first? false", %{channel: channel} do
+      %{queue: queue} = QueueBot.Manager.call({channel, {:display}})
+      assert length(queue) == 0
+      %{new_first?: new_first?} = QueueBot.Manager.call({channel, {:pop}})
+      assert new_first? == false
+    end
+
+    test "with any items in the queue returns new_first? true", %{channel: channel} do
+      items = ["Alan", "Chris", "Toulson"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{queue: queue} = QueueBot.Manager.call({channel, {:display}})
+      assert length(queue) == 3
+      %{new_first?: new_first?} = QueueBot.Manager.call({channel, {:pop}})
+      assert new_first? == true
+    end
+  end
+
   describe "#push" do
     test "adds an item", %{channel: channel} do
       item = "alan"
