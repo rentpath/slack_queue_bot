@@ -35,3 +35,5 @@ config :queue_bot, :server,
 config :queue_bot, :slack,
   name: "qubot",
   new_top_items_timeout: 30
+
+import_config "#{Mix.env}.exs"

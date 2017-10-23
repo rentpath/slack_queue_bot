@@ -22,20 +22,20 @@ defmodule QueueBot.Command do
     |> send_resp(200, Poison.encode!(response))
   end
 
-  defp additional_actions(channel, %{queue: queue, new_first?: true}, url) do
+  defp additional_actions(channel, %{"queue" => queue, "new_first?" => true}, url) do
     attachments =
       case queue do
         [] -> [%{"text": "Queue is now empty"}]
         queue ->
           Enum.map(Enum.zip(Enum.take(queue, 2), ["good", "warning"]),
-            fn {%{item: item}, color} -> %{"text": item, "color": color}
+            fn {%{"item" => item}, color} -> %{"text": item, "color": color}
                {item, color} -> %{"text": item, "color": color}
             end)
       end
 
     body = %{
       "response_type": "in_channel",
-      "text": "*Next in queue:*",
+      "text": "*Next in queue*",
       "attachments": attachments
     }
 
@@ -43,17 +43,17 @@ defmodule QueueBot.Command do
   end
   defp additional_actions(_, _, _), do: nil
 
-  defp response(%{queue: []}, _) do
+  defp response(%{"queue" => []}, _) do
     %{
       "text": "*Queue is empty*",
     }
   end
-  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down, :move_to_top] do
+  defp response(%{"queue" => queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down, :move_to_top] do
     last_index = length(queue) - 1
     attachments =
       queue
       |> Enum.with_index()
-      |> Enum.map(fn {%{id: id, item: item}, index} ->
+      |> Enum.map(fn {%{"id" => id, "item" => item}, index} ->
            buttons = %{
              "text": "#{index + 1}. #{item}",
              "callback_id": "edit_queue",
@@ -102,7 +102,7 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
-  defp response(%{queue: queue}, {_, type}) when elem(type, 0) in [:display, :push, :broadcast, :pop] do
+  defp response(%{"queue" => queue}, {_, type}) when elem(type, 0) in [:display, :push, :broadcast, :pop] do
     attachments =
       queue
       |> Enum.with_index()

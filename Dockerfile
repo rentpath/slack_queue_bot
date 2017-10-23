@@ -7,6 +7,8 @@ WORKDIR $HOME/slack_queue_bot
 RUN mix local.hex --force
 RUN mix local.rebar --force
 
+RUN mkdir -p $HOME/slack_queue_bot/data
+
 COPY . $HOME/slack_queue_bot
 RUN chown -R elixir:elixir $HOME/slack_queue_bot
 

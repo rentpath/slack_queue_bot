@@ -15,6 +15,7 @@ erl_crash.dump
 .idea
 .DS_Store
 Jenkinsfile
+data
 
 # ignore all markdown files (md) beside all README*.md other than README-secret.md
 *.md
