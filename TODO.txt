@@ -19,3 +19,4 @@ SOON:
 * add nginx https
 * if items go from 1 to 0, the broadcast still happens
 * remove *bold* from next in queue broadcast
+* speed up builds -- not enough caching
