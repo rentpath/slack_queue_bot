@@ -5,7 +5,7 @@ defmodule QueueBot.Manager do
   @new_top_items_timout Application.get_env(:queue_bot, :slack)[:new_top_items_timeout]
   @use_redis Application.get_env(:queue_bot, :redis_client)[:use_redis]
 
-  def start_link() do
+  def start_link do
     GenServer.start_link(__MODULE__, nil, [name: :manager])
   end
 
@@ -142,19 +142,19 @@ defmodule QueueBot.Manager do
       end
     {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
   end
-  defp do_handle_call({channel, {:delayed_message, url, body}}, from, state) do
+  defp do_handle_call({channel, {:delayed_message, message_sender}}, from, state) do
     case state[channel]["delayed_job_ref"] do
       nil ->
-        sender_ref = Process.send_after(self(), {:delayed_response, channel, url, body}, @new_top_items_timout * 1000)
+        sender_ref = Process.send_after(self(), {:delayed_response, channel, message_sender}, @new_top_items_timout * 1000)
         {:reply, :ok, put_in(state, [channel, "delayed_job_ref"], sender_ref)}
       sender_ref ->
         Process.cancel_timer(sender_ref)
-        do_handle_call({channel, {:delayed_message, url, body}}, from, put_in(state, [channel, "delayed_job_ref"], nil))
+        do_handle_call({channel, {:delayed_message, message_sender}}, from, put_in(state, [channel, "delayed_job_ref"], nil))
     end
   end
 
-  def handle_info({:delayed_response, channel, url, body}, state) do
-    HTTPoison.post url, body
+  def handle_info({:delayed_response, channel, message_sender}, state) do
+    message_sender.()
     {:noreply, put_in(state, [channel, "delayed_job_ref"], nil)}
   end
 

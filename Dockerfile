@@ -9,6 +9,14 @@ RUN mix local.rebar --force
 
 RUN mkdir -p $HOME/slack_queue_bot/data
 
+RUN mkdir -p $HOME/.cache
+RUN chown -R elixir:elixir $HOME/.cache
+RUN apt-get update
+RUN apt-get -y install python2.7 python2.7-dev curl
+RUN curl -O https://bootstrap.pypa.io/get-pip.py
+RUN python2.7 get-pip.py
+RUN pip install awscli --upgrade --user
+
 COPY . $HOME/slack_queue_bot
 RUN chown -R elixir:elixir $HOME/slack_queue_bot
 
