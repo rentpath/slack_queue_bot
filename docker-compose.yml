@@ -2,6 +2,7 @@ version: '2'
 services:
   app:
     build: .
+    image: alanvoss/slack_queue_bot:latest
     ports:
       - 127.0.0.1:4000:4000
     environment:

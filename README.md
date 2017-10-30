@@ -24,3 +24,9 @@ just started this server.
 * "Interactive Components"
   * "Request URL": your root endpoint
   * "Options Load URL (for Message Menus)": leave empty
+* "OAuth & Permissions"
+  * "Select Permission Scopes": `Send messages as <YourBotName>`
+  * "OAuth Access Token": add this to config.exs (or an env-specific `Mix.Config` file)
+
+You can also choose to utilize an access token fetcher, also in the `config.exs` file.  It's
+advised not to store any secrets, such as this, in any git repo or public dockerhub image.

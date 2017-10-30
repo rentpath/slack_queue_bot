@@ -3,6 +3,8 @@ defmodule QueueBot.Command do
   import Plug.Conn
   require Poison
 
+  @slack_qubot_url "https://slack.com/api/chat.postMessage"
+
   def init(options) do
     options
   end
@@ -11,37 +13,46 @@ defmodule QueueBot.Command do
     {:ok, body, _} = Plug.Conn.read_body(conn)
     params = Plug.Conn.Query.decode(body)
 
-    {response_url, {channel, _} = parsed_command} = parse_command(params)
+    {channel, _} = parsed_command = parse_command(params)
 
     manager_result = Manager.call(parsed_command)
     response =  response(manager_result, parsed_command)
-    additional_actions(channel, manager_result, response_url)
+    additional_actions(channel, manager_result)
 
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(200, Poison.encode!(response))
   end
 
-  defp additional_actions(channel, %{"queue" => queue, "new_first?" => true}, url) do
-    attachments =
-      case queue do
-        [] -> [%{"text": "Queue is now empty"}]
-        queue ->
-          Enum.map(Enum.zip(Enum.take(queue, 2), ["good", "warning"]),
-            fn {%{"item" => item}, color} -> %{"text": item, "color": color}
-               {item, color} -> %{"text": item, "color": color}
-            end)
+  defp additional_actions(channel, %{"queue" => queue, "new_first?" => true}) do
+    token = Application.get_env(:queue_bot, :slack)[:token]
+
+    if token do
+      attachments =
+        case queue do
+          [] -> [%{"text": "Queue is now empty"}]
+          queue ->
+            Enum.take(queue, 2)
+            |> Enum.zip(["good", "warning"])
+            |> Enum.map(&make_item_attachment/1)
+        end
+
+      message_sender = fn ->
+        HTTPoison.post @slack_qubot_url, {:form, [
+          {"token", token},
+          {"channel", channel},
+          {"text", "*Next in queue*"},
+          {"attachments", Poison.encode!(attachments)}
+        ]}
       end
 
-    body = %{
-      "response_type": "in_channel",
-      "text": "*Next in queue*",
-      "attachments": attachments
-    }
-
-    Manager.call({channel, {:delayed_message, url, Poison.encode!(body)}})
+      Manager.call({channel, {:delayed_message, message_sender}})
+    end
   end
-  defp additional_actions(_, _, _), do: nil
+  defp additional_actions(_, _), do: nil
+
+  defp make_item_attachment({%{"item" => item}, color}), do: %{"text": item, "color": color}
+  defp make_item_attachment({item, color}), do: %{"text": item, "color": color}
 
   defp response(%{"queue" => []}, _) do
     %{
@@ -128,21 +139,20 @@ defmodule QueueBot.Command do
       parsed_payload["actions"]
       |> List.first
 
-    response_url = parsed_payload["response_url"]
     action_atom = action |> String.to_atom
 
-    {response_url, {channel_id, {action_atom, id}}}
+    {channel_id, {action_atom, id}}
   end
   # typed /queue (or whatever app name is) calls
-  defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id, "response_url" => response_url}) do
+  defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id}) do
     cond do
-      text =~ ~r/^\s*help\s*$/ -> {response_url, {channel_id, {:help}}}
-      text =~ ~r/^\s*broadcast\s*$/ -> {response_url, {channel_id, {:broadcast}}}
-      text =~ ~r/^\s*display\s*$/ -> {response_url, {channel_id, {:display}}}
-      text =~ ~r/^\s*edit\s*$/ -> {response_url, {channel_id, {:edit}}}
-      text =~ ~r/^\s*pop\s*$/ -> {response_url, {channel_id, {:pop}}}
-      text =~ ~r/^\s*$/ -> {response_url, {channel_id, {:help}}}
-      true -> {response_url, {channel_id, {:push, id, text}}}
+      text =~ ~r/^\s*help\s*$/ -> {channel_id, {:help}}
+      text =~ ~r/^\s*broadcast\s*$/ -> {channel_id, {:broadcast}}
+      text =~ ~r/^\s*display\s*$/ -> {channel_id, {:display}}
+      text =~ ~r/^\s*edit\s*$/ -> {channel_id, {:edit}}
+      text =~ ~r/^\s*pop\s*$/ -> {channel_id, {:pop}}
+      text =~ ~r/^\s*$/ -> {channel_id, {:help}}
+      true -> {channel_id, {:push, id, text}}
     end
   end
 

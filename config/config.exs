@@ -34,6 +34,8 @@ config :queue_bot, :server,
 
 config :queue_bot, :slack,
   name: "qubot",
-  new_top_items_timeout: 30
+  new_top_items_timeout: 30,
+  token: nil,
+  token_fetch_command: "aws ssm get-parameters --names slack.qubot-token --with-decryption --region us-east-2 --output text 2>&1 | cut -d$'\t' -f4"
 
 import_config "#{Mix.env}.exs"
