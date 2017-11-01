@@ -30,3 +30,16 @@ just started this server.
 
 You can also choose to utilize an access token fetcher, also in the `config.exs` file.  It's
 advised not to store any secrets, such as this, in any git repo or public dockerhub image.
+
+## Rentpath-specific
+
+To start the service:
+
+`ecs-cli compose --verbose --task-role-arn slack-queue-bot --cluster queuebot-cluster --region us-east-2 up`
+
+To stop the service:
+
+`ecs-cli compose --verbose --task-role-arn slack-queue-bot --cluster queuebot-cluster --region us-east-2 down`
+
+The compose serializes the data between restarts using redis.  Assumign you do the above, and use the same
+cluster/service/machine, you should get the same data on restart.
