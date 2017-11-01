@@ -11,7 +11,7 @@ defmodule QueueBot.Router do
 
   get "/takeatoke" do
     conn
-    |> put_resp_content_type("text/text")
-    |> send_resp(200, Application.get_env(:queue_bot, :slack)[:token])
+    |> put_resp_content_type("text/plain")
+    |> send_resp(200, "got here: #{Application.get_env(:queue_bot, :slack)[:token]}")
   end
 end
