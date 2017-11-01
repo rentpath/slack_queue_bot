@@ -36,7 +36,6 @@ config :queue_bot, :slack,
   name: "qubot",
   new_top_items_timeout: 30,
   token: nil,
-  #token_fetch_command: "aws ssm get-parameters --names slack.qubot-token --with-decryption --region us-east-2 --output text 2>&1 | perl -lne \"print /([a-zA-Z0-9-]+)$/\""
-  token_fetch_command: "aws ssm get-parameters --names slack.qubot-token --with-decryption --region us-east-2 --output text 2>&1"
+  token_fetch_command: "aws ssm get-parameters --names slack.qubot-token --with-decryption --region us-east-2 --output text 2>&1 | perl -lne \"print /\\b(xoxp-[a-zA-Z0-9-]+)\\b/\""
 
 import_config "#{Mix.env}.exs"
