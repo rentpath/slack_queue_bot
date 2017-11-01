@@ -6,6 +6,7 @@ services:
       - 5000:4000
     environment:
       - MIX_ENV=prod
+      - ECS_ENABLE_TASK_IAM_ROLE=true
     links:
       - redis:redis
     depends_on:

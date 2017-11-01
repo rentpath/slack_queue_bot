@@ -4,6 +4,7 @@ log
 tmp
 
 erl_crash.dump
+*docker-compose*.yml
 .dockerignore
 .git
 .gitignore
