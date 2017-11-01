@@ -3,7 +3,7 @@ services:
   app:
     image: alanvoss/slack_queue_bot:latest
     ports:
-      - 5000:4000
+      - 4000:4000
     environment:
       - MIX_ENV=prod
       - ECS_ENABLE_TASK_IAM_ROLE=true
