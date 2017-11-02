@@ -141,6 +141,21 @@ defmodule QueueBot.ManagerTest do
       assert length(queue) == length(items) - 1
     end
 
+    test "removes the second item correctly in a two item queue", %{channel: channel} do
+      items = ["pi", "co"]
+      Enum.each(items, &(add_item(channel, &1)))
+      %{"queue" => queue} = QueueBot.Manager.call({channel, {:edit}})
+      assert length(queue) == length(items)
+      [%{"id" => id1, "item" => item1}, %{"id" => id2}] = queue
+      QueueBot.Manager.call({channel, {:remove, id2}})
+      %{"queue" => queue} = QueueBot.Manager.call({channel, {:edit}})
+      [%{"id" => new_id1, "item" => new_item1}] = queue
+      assert length(queue) == length(items) - 1
+      assert new_id1 == id1
+      assert new_id1 != id2
+      assert new_item1 == item1
+    end
+
     test "with multiple items, removing the first, returns new_first? true", %{channel: channel} do
       items = ["so", "do", "la", "fa"]
       Enum.each(items, &(add_item(channel, &1)))
