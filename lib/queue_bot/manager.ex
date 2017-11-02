@@ -102,7 +102,7 @@ defmodule QueueBot.Manager do
       case Enum.find_index(queue, &(&1["id"] == id)) do
         nil -> {queue, false}
         0 -> {List.delete_at(queue, 0), true}
-        1 -> {List.delete_at(queue, 0), true}
+        1 -> {List.delete_at(queue, 1), true}
         index -> {List.delete_at(queue, index), false}
       end
     {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
