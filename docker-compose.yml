@@ -11,6 +11,7 @@ services:
       - redis:redis
     depends_on:
       - redis
+    restart: always
     mem_limit: 314572800
   redis:
     image: redis:latest
@@ -19,4 +20,5 @@ services:
     command: redis-server --appendonly yes
     volumes:
       - /data:/data
+    restart: always
     mem_limit: 26214400
