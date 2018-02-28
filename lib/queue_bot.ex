@@ -12,22 +12,15 @@ defmodule QueueBot do
   def start(_type, _args) do
     maybe_set_slack_token()
 
-    children = redis_worker() ++ [
+    children = [
+      {QueueBot.Redis, [:redis]},
       Plug.Adapters.Cowboy.child_spec(:http, QueueBot.Router, [], port: @port),
-      worker(QueueBot.Manager, [])
+      QueueBot.Manager
     ]
 
     Logger.info "Started application"
 
     Supervisor.start_link(children, strategy: :one_for_one)
-  end
-
-  defp redis_worker do
-    if Application.get_env(:queue_bot, :redis_client)[:use_redis] do
-      [worker(QueueBot.Redis, [:redis])]
-    else
-      []
-    end
   end
 
   defp maybe_set_slack_token do
