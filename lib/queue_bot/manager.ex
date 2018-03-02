@@ -5,7 +5,7 @@ defmodule QueueBot.Manager do
   @new_top_items_timout Application.get_env(:queue_bot, :slack)[:new_top_items_timeout]
   @use_redis Application.get_env(:queue_bot, :redis_client)[:use_redis]
 
-  def start_link do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, nil, [name: :manager])
   end
 
