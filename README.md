@@ -33,6 +33,11 @@ advised not to store any secrets, such as this, in any git repo or public docker
 
 ## Rentpath-specific
 
+Note:
+"Root Endpoint" above can be discovered with the ECS CLI.
+`ecs-cli ps --cluster queuebot-cluster` 
+to get the current IP/port running on AWS.
+
 To start the service:
 
 `ecs-cli compose --verbose --task-role-arn slack-queue-bot --cluster queuebot-cluster --region us-east-2 up`
@@ -41,5 +46,5 @@ To stop the service:
 
 `ecs-cli compose --verbose --task-role-arn slack-queue-bot --cluster queuebot-cluster --region us-east-2 down`
 
-The compose serializes the data between restarts using redis.  Assumign you do the above, and use the same
+The compose serializes the data between restarts using redis.  Assuming you do the above, and use the same
 cluster/service/machine, you should get the same data on restart.
