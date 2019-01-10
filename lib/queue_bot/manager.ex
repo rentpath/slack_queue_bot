@@ -21,6 +21,7 @@ defmodule QueueBot.Manager do
     new_state =
       case state[channel] do
         nil -> Map.put(state, channel, %{"queue" => [], "delayed_job_ref" => nil})
+
         _ -> state
       end
 
@@ -32,7 +33,9 @@ defmodule QueueBot.Manager do
     persisted_channels =
       case Exredis.query(:redis, ["KEYS", "*"]) do
         :no_connection -> []
+
         nil -> []
+
         channels -> channels
       end
 
@@ -72,11 +75,10 @@ defmodule QueueBot.Manager do
 
     {:reply, items, state}
   end
-  defp do_handle_call({channel, command}, _from, state) when command in [{:display}, {:broadcast}] do
-    items =
-      state[channel]["queue"]
-      |> get_item_texts()
-    {:reply, %{"queue" => items, "new_first?" => false}, state}
+
+  defp do_handle_call({channel, {command, _id, _user_name}}, _from, state) when command in [:display, :broadcast] do
+    queue = state[channel]["queue"]
+    {:reply, %{"queue" => queue, "new_first?" => false}, state}
   end
   defp do_handle_call({channel, {:edit}}, _from, state) do
     queue = state[channel]["queue"]
@@ -84,60 +86,71 @@ defmodule QueueBot.Manager do
   end
   defp do_handle_call({channel, {:push, id, item}}, _from, state) do
     queue = state[channel]["queue"]
-    new_queue = queue ++ [%{"id" => id, "item" => item}]
-    items = get_item_texts(new_queue)
+    new_queue = queue ++ [%{"id" => id, "item" => item, "reviewers" => []}]
     new_first? = length(queue) in [0,1]
-    {:reply, %{"queue" => items, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
+    {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
   end
-  defp do_handle_call({channel, {:pop}}, _from, state) do
+  defp do_handle_call({channel, {:pop, _id, _user_name}}, _from, state) do
     queue = state[channel]["queue"]
     new_first? = length(queue) > 0
     new_queue = Enum.drop(queue, 1)
-    items = get_item_texts(new_queue)
-    {:reply, %{"queue" => items, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
+    {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
   end
-  defp do_handle_call({channel, {:remove, id}}, _from, state) do
+  defp do_handle_call({channel, {:remove, id, _user_name}}, _from, state) do
     queue = state[channel]["queue"]
     {new_queue, new_first?} =
       case Enum.find_index(queue, &(&1["id"] == id)) do
         nil -> {queue, false}
+
         0 -> {List.delete_at(queue, 0), true}
+
         1 -> {List.delete_at(queue, 1), true}
+
         index -> {List.delete_at(queue, index), false}
       end
     {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
   end
-  defp do_handle_call({channel, {:up, id}}, _from, state) do
+  defp do_handle_call({channel, {:up, id, _user_name}}, _from, state) do
     queue = state[channel]["queue"]
     {new_queue, new_first?} =
       case Enum.find_index(queue, &(&1["id"] == id)) do
         nil -> {queue, false}
+
         0 -> {queue, false}
+
         1 -> {move_up(queue, 1), true}
+
         2 -> {move_up(queue, 2), true}
+
         index -> {move_up(queue, index), false}
       end
     {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
   end
-  defp do_handle_call({channel, {:down, id}}, _from, state) do
+  defp do_handle_call({channel, {:down, id, _user_name}}, _from, state) do
     queue = state[channel]["queue"]
     last_queue_index = length(queue) - 1
     {new_queue, new_first?} =
       case Enum.find_index(queue, &(&1["id"] == id)) do
         nil -> {queue, false}
+
         ^last_queue_index -> {queue, false}
+
         0 -> {move_down(queue, 0), true}
+
         1 -> {move_down(queue, 1), true}
+
         index -> {move_down(queue, index), false}
       end
     {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
   end
-  defp do_handle_call({channel, {:move_to_top, id}}, _from, state) do
+  defp do_handle_call({channel, {:move_to_top, id, _user_name}}, _from, state) do
     queue = state[channel]["queue"]
     {new_queue, new_first?} =
       case Enum.find_index(queue, &(&1["id"] == id)) do
         nil -> {queue, false}
+
         0 -> {queue, false}
+
         index -> {move_to_top(queue, index), true}
       end
     {:reply, %{"queue" => new_queue, "new_first?" => new_first?}, put_in(state, [channel, "queue"], new_queue)}
@@ -147,19 +160,47 @@ defmodule QueueBot.Manager do
       nil ->
         sender_ref = Process.send_after(self(), {:delayed_response, channel, message_sender}, @new_top_items_timout * 1000)
         {:reply, :ok, put_in(state, [channel, "delayed_job_ref"], sender_ref)}
+
       sender_ref ->
         Process.cancel_timer(sender_ref)
         do_handle_call({channel, {:delayed_message, message_sender}}, from, put_in(state, [channel, "delayed_job_ref"], nil))
     end
   end
 
+  defp do_handle_call({channel, {:add_review, id, user_name}}, _from, state) do
+    queue = state[channel]["queue"]
+    item_index = Enum.find_index(queue, &(&1["id"] == id))
+    # item_index == nil if an item has been removed and you try to add a review to that item
+    cond do
+      item_index == nil -> 
+        {:reply, %{"queue" => queue, "new_first?" => false}, state}
+
+      reviewer_exists?(queue, item_index, user_name) ->
+        {:reply, %{"queue" => queue, "new_first?" => false}, state}
+
+      true ->
+        new_queue = add_to_reviewers(queue, item_index, user_name)
+        new_state = put_in(state, [channel, "queue"], new_queue)
+        {:reply, %{"queue" => new_queue, "new_first?" => false}, new_state}
+    end
+  end
+  
+  defp do_handle_call({channel, {:remove_review, id, user_name}}, _from, state) do
+    queue = state[channel]["queue"]
+    # item_index = nil if an item has been removed and you try to remove a review from that item
+    case Enum.find_index(queue, &(&1["id"] == id)) do
+      nil -> 
+        {:reply, %{"queue" => queue, "new_first?" => false}, state}
+
+      item_index ->
+        new_queue = remove_from_reviewers(queue, item_index, user_name)
+        {:reply, %{"queue" => new_queue, "new_first?" => false}, put_in(state, [channel, "queue"], new_queue)}
+    end
+  end
+
   def handle_info({:delayed_response, channel, message_sender}, state) do
     message_sender.()
     {:noreply, put_in(state, [channel, "delayed_job_ref"], nil)}
-  end
-
-  def get_item_texts(queue) do
-    Enum.map(queue, &(&1["item"]))
   end
 
   defp move_up(queue, index) do
@@ -178,5 +219,28 @@ defmodule QueueBot.Manager do
     item = Enum.at(queue, index)
     list = List.delete_at(queue, index)
     List.insert_at(list, 0, item)
+  end
+
+  defp reviewer_exists?(queue, index, user_name) do
+    %{"reviewers" => reviewers} = Enum.at(queue, index)
+    user_name in reviewers
+  end
+
+  defp add_to_reviewers(queue, index, user_name) do
+    new_item =
+      queue
+      |> Enum.at(index)
+      |> Map.update("reviewers", [], &(&1 ++ [user_name]))
+
+    List.replace_at(queue, index, new_item)
+  end
+
+  defp remove_from_reviewers(queue, index, user_name) do
+    new_item =
+      queue
+      |> Enum.at(index)
+      |> Map.update("reviewers", [], &(&1 -- [user_name]))
+
+    List.replace_at(queue, index, new_item)
   end
 end
