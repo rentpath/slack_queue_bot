@@ -4,6 +4,8 @@ defmodule QueueBot.Command do
   require Poison
 
   @slack_qubot_url "https://slack.com/api/chat.postMessage"
+  @edit_actions [:edit, :remove, :up, :down, :move_to_top]
+  @non_edit_actions [:display, :push, :broadcast, :pop, :add_review, :remove_review]
 
   def init(options) do
     options
@@ -59,7 +61,7 @@ defmodule QueueBot.Command do
       "text": "*Queue is empty*",
     }
   end
-  defp response(%{"queue" => queue}, {_, type}) when elem(type, 0) in [:edit, :remove, :up, :down, :move_to_top] do
+  defp response(%{"queue" => queue}, {_, type}) when elem(type, 0) in @edit_actions do
     last_index = length(queue) - 1
     attachments =
       queue
@@ -113,44 +115,73 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
-  defp response(%{"queue" => queue}, {_, type}) when elem(type, 0) in [:display, :push, :broadcast, :pop] do
-    attachments =
-      queue
-      |> Enum.with_index()
-      |> Enum.map(fn {queue, index} -> %{"text" => "#{index + 1}. #{queue}"} end)
-
+  defp response(%{"queue" => queue}, {_, {action, _id, user}})
+  when action in @non_edit_actions do
+    attachments = text_with_review_buttons(queue, user)
     base_message =
       %{
         "text": "Current Queue",
         "attachments": attachments
       }
 
-    case elem(type, 0) do
+    case action do
       :broadcast -> Map.put(base_message, :"response_type", "in_channel")
       _ -> base_message
     end
   end
 
+  defp text_with_review_buttons(queue, user) do
+    queue
+    |> Enum.with_index()
+    |> Enum.map(fn(queue_with_index) -> text_with_review_button(queue_with_index, user) end)
+  end
+
+  defp text_with_review_button({%{"id" => id, "item" => item, "reviewers" => reviewers}, index}, user) do
+    text =
+      case length(reviewers) > 0 do
+        false -> 
+          "#{index + 1}. #{item}"
+
+        true ->
+          reviewer_list = Enum.join(reviewers, ", ")
+          "#{index + 1}. #{item} *Reviewers:* #{reviewer_list}"
+      end
+
+    buttons = %{
+      "actions": [],
+      "attachment_type": "default",
+      "callback_id": "edit_queue",
+      "text": text
+    }
+
+    case Enum.member?(reviewers, user) do
+      false -> Map.update!(buttons, :actions, &[review_button(id) | &1])
+
+      true -> Map.update!(buttons, :actions, &[remove_review_button(id) | &1])
+    end
+  end
   # button clicks
   defp parse_command(%{"payload" => payload}) do
     parsed_payload = payload |> Poison.decode!
     channel_id = parsed_payload["channel"]["id"]
+    user_name = get_in(parsed_payload, ["user", "name"])
+
     %{"name" => action, "value" => id} =
       parsed_payload["actions"]
       |> List.first
 
     action_atom = action |> String.to_atom
 
-    {channel_id, {action_atom, id}}
+    {channel_id, {action_atom, id, user_name}}
   end
   # typed /queue (or whatever app name is) calls
-  defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id}) do
+  defp parse_command(%{"text" => text, "channel_id" => channel_id, "trigger_id" => id, "user_name" => user_name}) do
     cond do
       text =~ ~r/^\s*help\s*$/ -> {channel_id, {:help}}
-      text =~ ~r/^\s*broadcast\s*$/ -> {channel_id, {:broadcast}}
-      text =~ ~r/^\s*display\s*$/ -> {channel_id, {:display}}
+      text =~ ~r/^\s*broadcast\s*$/ -> {channel_id, {:broadcast, nil, user_name}}
+      text =~ ~r/^\s*display\s*$/ -> {channel_id, {:display, nil, user_name}}
       text =~ ~r/^\s*edit\s*$/ -> {channel_id, {:edit}}
-      text =~ ~r/^\s*pop\s*$/ -> {channel_id, {:pop}}
+      text =~ ~r/^\s*pop\s*$/ -> {channel_id, {:pop, nil, user_name}}
       text =~ ~r/^\s*$/ -> {channel_id, {:help}}
       true -> {channel_id, {:push, id, text}}
     end
@@ -182,4 +213,23 @@ defmodule QueueBot.Command do
       "value": id
     }
   end
+
+  defp review_button(id) do
+    %{
+      "name": "add_review",
+      "text": "Review",
+      "type": "button",
+      "value": id
+    }
+  end
+
+  defp remove_review_button(id) do
+    %{
+      "name": "remove_review",
+      "text": "Remove Review",
+      "type": "button",
+      "value": id
+    }
+  end
+
 end
