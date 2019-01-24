@@ -119,9 +119,19 @@ defmodule QueueBot.Command do
     attachments =
       queue
       |> Enum.with_index()
-      |> Enum.map(fn {%{"id" => id, "item" => item}, index} ->
+      |> Enum.map(fn {%{"id" => id, "item" => item, "reviewers" => reviewers}, index} ->
+        text =
+          case length(reviewers) > 0 do
+            false -> 
+              "#{index + 1}. #{item}"
+    
+            true ->
+              reviewer_list = Enum.join(reviewers, ", ")
+              "#{index + 1}. #{item} *Reviewers:* #{reviewer_list}"
+          end
+  
           buttons = %{
-            "text": "#{index + 1}. #{item}",
+            "text": text,
             "callback_id": "edit_queue",
             "attachment_type": "default",
             "response_type": "in_channel",
