@@ -1,7 +1,7 @@
 version: '2'
 services:
   app:
-    image: alanvoss/slack_queue_bot:latest
+    image: rentpath/slack-queue-bot:latest
     ports:
       - 4000:4000
     environment:
