@@ -134,13 +134,13 @@ defmodule QueueBot.Command do
             "text": text,
             "callback_id": "edit_queue",
             "attachment_type": "default",
-            "response_type": "in_channel",
             "actions": []
           }
         end)
     %{
       "text": "Current Queue",
-      "attachments": attachments
+      "attachments": attachments,
+      "response_type": "in_channel"
     }
   end
   defp response(%{"queue" => queue}, {_, {action, _id, user}})
