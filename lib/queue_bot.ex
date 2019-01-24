@@ -13,7 +13,7 @@ defmodule QueueBot do
     maybe_set_slack_token()
 
     children = [
-      {QueueBot.Redis, [:redis]},
+      {QueueBot.Redis, :redis},
       Plug.Adapters.Cowboy.child_spec(:http, QueueBot.Router, [], port: @port),
       QueueBot.Manager
     ]
