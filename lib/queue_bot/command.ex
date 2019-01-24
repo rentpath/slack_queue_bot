@@ -5,7 +5,7 @@ defmodule QueueBot.Command do
 
   @slack_qubot_url "https://slack.com/api/chat.postMessage"
   @edit_actions [:edit, :remove, :up, :down, :move_to_top]
-  @non_edit_actions [:display, :push, :broadcast, :pop, :add_review, :remove_review]
+  @non_edit_actions [:display, :push, :pop, :add_review, :remove_review]
 
   def init(options) do
     options
@@ -115,19 +115,31 @@ defmodule QueueBot.Command do
       "attachments": attachments
     }
   end
+  defp response(%{"queue" => queue}, {_, {:broadcast, _id, user}}) do
+    attachments =
+      queue
+      |> Enum.with_index()
+      |> Enum.map(fn {%{"id" => id, "item" => item}, index} ->
+          buttons = %{
+            "text": "#{index + 1}. #{item}",
+            "callback_id": "edit_queue",
+            "attachment_type": "default",
+            "response_type": "in_channel",
+            "actions": []
+          }
+        end)
+    %{
+      "text": "Current Queue",
+      "attachments": attachments
+    }
+  end
   defp response(%{"queue" => queue}, {_, {action, _id, user}})
   when action in @non_edit_actions do
     attachments = text_with_review_buttons(queue, user)
-    base_message =
-      %{
-        "text": "Current Queue",
-        "attachments": attachments
-      }
-
-    case action do
-      :broadcast -> Map.put(base_message, :"response_type", "in_channel")
-      _ -> base_message
-    end
+    %{
+      "text": "Current Queue",
+      "attachments": attachments
+    }
   end
 
   defp text_with_review_buttons(queue, user) do

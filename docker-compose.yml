@@ -19,6 +19,6 @@ services:
       - 6379
     command: redis-server --appendonly yes
     volumes:
-      - /data:/data
+      - ./data:/data
     restart: always
     mem_limit: 26214400

@@ -1,4 +1,4 @@
-FROM elixir:1.5.2
+FROM elixir:1.6.4
 
 ENV HOME=/home/elixir MIX_ENV=prod
 RUN groupadd -r elixir && useradd -r -g elixir --create-home elixir
